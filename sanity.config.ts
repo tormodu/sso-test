@@ -37,7 +37,7 @@ export default defineConfig({
     providers: [
       {
         name: 'saml',
-        title: 'saml',
+        title: 'SAML Login',
         url: 'https://api.sanity.io/v2021-10-01/auth/saml/login/a0b60edf',
       },
     ],
