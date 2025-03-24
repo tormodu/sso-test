@@ -113,6 +113,7 @@ const UserManagerComponent = (props) => {
     setPersons([])
     fetch('https://api.sanity.io/v2021-06-07/projects/skmdu5gt/acl', {
       method: 'GET',
+      mode: 'no-cors',
       headers: {
         Authorization:
           'Bearer skXGgbZKh6V6u3MuOQ8WBWRv3E30Gbr9zkDoQLz0QUBY3ZGnfWslGgymfUURMi78ML30JEMjaXqj0ZWB5CmETGRlgRUwJJJZEGPNn725O9EOM8L745VRpF23knramEMxZFBIF2koUDqaYzqSv5r56kZD6VzAdFDexXtRtTpqz4cCWr1DIlAI',
