@@ -2,6 +2,7 @@ import {defineConfig, createAuthStore} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemaTypes'
+import {UserManager} from './userManager'
 
 export default defineConfig({
   name: 'default',
@@ -11,6 +12,7 @@ export default defineConfig({
   dataset: 'ssotest',
 
   plugins: [structureTool(), visionTool()],
+  tools: [UserManager()],
 
   schema: {
     types: schemaTypes,
