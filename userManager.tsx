@@ -72,41 +72,30 @@ const UserManagerComponent = (props) => {
     onClose()
   }
 
-  function changeRole(id, newValue) {
+  function changeRole(id, newRole) {
     const person = persons.find((p) => p.id === id)
 
-    fetch(`https://api.sanity.io/v2021-06-07/projects/skmdu5gt/acl/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        roleName: newValue,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:
-          'Bearer skXGgbZKh6V6u3MuOQ8WBWRv3E30Gbr9zkDoQLz0QUBY3ZGnfWslGgymfUURMi78ML30JEMjaXqj0ZWB5CmETGRlgRUwJJJZEGPNn725O9EOM8L745VRpF23knramEMxZFBIF2koUDqaYzqSv5r56kZD6VzAdFDexXtRtTpqz4cCWr1DIlAI',
+    fetch(
+      'https://sso-saml-example2.vercel.app/changeRole?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          id: id,
+          newRole: newRole,
+          oldRole: person.role,
+        }),
       },
-    })
+    ).then((response) => {
+      const updatedPersons = persons.map((person) =>
+        person.id === id ? {...person, role: newRole} : person,
+      )
 
-    fetch(`https://api.sanity.io/v2021-06-07/projects/skmdu5gt/acl/${id}`, {
-      method: 'DELETE',
-      body: JSON.stringify({
-        roleName: person.role,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:
-          'Bearer skXGgbZKh6V6u3MuOQ8WBWRv3E30Gbr9zkDoQLz0QUBY3ZGnfWslGgymfUURMi78ML30JEMjaXqj0ZWB5CmETGRlgRUwJJJZEGPNn725O9EOM8L745VRpF23knramEMxZFBIF2koUDqaYzqSv5r56kZD6VzAdFDexXtRtTpqz4cCWr1DIlAI',
-      },
+      toast.push({
+        status: 'success',
+        title: `Role for person ${decodeURIComponent(escape(person.displayName))} updated`,
+      })
+      setPersons(updatedPersons)
     })
-    const updatedPersons = persons.map((person) =>
-      person.id === id ? {...person, role: newValue} : person,
-    )
-
-    toast.push({
-      status: 'success',
-      title: `Role for person ${decodeURIComponent(escape(person.displayName))} updated`,
-    })
-    setPersons(updatedPersons)
   }
   useEffect(() => {
     setPersons([])
