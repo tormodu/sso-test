@@ -52,7 +52,6 @@ const UserManagerComponent = (props) => {
 
     const res = await fetch(
       'https://sso-saml-example2.vercel.app/addUser?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f',
-      //'http://localhost:3000/addUser?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f',
       {
         mode: 'no-cors',
         method: 'POST',
@@ -111,35 +110,12 @@ const UserManagerComponent = (props) => {
   }
   useEffect(() => {
     setPersons([])
-    fetch('https://api.sanity.io/v2021-06-07/projects/skmdu5gt/acl', {
+    fetch('https://sso-saml-example2.vercel.app/users?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f', {
       method: 'GET',
-      mode: 'no-cors',
-      headers: {
-        Authorization:
-          'Bearer skXGgbZKh6V6u3MuOQ8WBWRv3E30Gbr9zkDoQLz0QUBY3ZGnfWslGgymfUURMi78ML30JEMjaXqj0ZWB5CmETGRlgRUwJJJZEGPNn725O9EOM8L745VRpF23knramEMxZFBIF2koUDqaYzqSv5r56kZD6VzAdFDexXtRtTpqz4cCWr1DIlAI',
-      },
     })
       .then((response) => response.json())
       .then((data) => {
-        const filteredUsers = data.filter(
-          (p) =>
-            p.roles.filter((r) => r.name === 'sanity_read' || r.name === 'sanity_write').length > 0,
-        )
-
-        for (const user of filteredUsers) {
-          fetch(`https://api.sanity.io/v2021-06-07/projects/skmdu5gt/users/${user.projectUserId}`, {
-            method: 'GET',
-            headers: {
-              Authorization:
-                'Bearer skXGgbZKh6V6u3MuOQ8WBWRv3E30Gbr9zkDoQLz0QUBY3ZGnfWslGgymfUURMi78ML30JEMjaXqj0ZWB5CmETGRlgRUwJJJZEGPNn725O9EOM8L745VRpF23knramEMxZFBIF2koUDqaYzqSv5r56kZD6VzAdFDexXtRtTpqz4cCWr1DIlAI',
-            },
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              data.role = user.roles[0].name
-              setPersons((prevPersons) => [...prevPersons, data])
-            })
-        }
+        setPersons(data)
       })
   }, [])
   return (
