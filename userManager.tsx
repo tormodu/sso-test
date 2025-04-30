@@ -6,34 +6,37 @@ import {
   Grid,
   Box,
   Text,
-  Select,
   useToast,
   ToastProvider,
   Button,
   Dialog,
   TextInput,
+  Checkbox,
+  Flex,
 } from '@sanity/ui'
 import React, {useState, useEffect, useCallback} from 'react'
+import {useClient} from 'sanity'
 
 const UserManagerComponent = (props) => {
+  const projectId = 'skmdu5gt'
+  const client = useClient({apiVersion: '2025-02-06'})
   const toast = useToast()
   const [persons, setPersons] = useState([])
+  const [roles, setRoles] = useState([])
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [selectedRole, setSelectedRole] = useState('sanity_read')
-
+  const [rolesNewUser, setRolesNewUser] = useState([])
   const [open, setOpen] = useState(false)
+  const [openRoles, setOpenRoles] = useState(false)
   const onClose = useCallback(() => setOpen(false), [])
   const onOpen = useCallback(() => setOpen(true), [])
-  const roles = [
-    {name: 'Read', value: 'sanity_read', id: '01958aba-09d6-8623-dd41-b2a88d17b391'},
-    {name: 'Write', value: 'sanity_write', id: '01958b89-5248-b6fd-f28f-daa5d5411eca'},
-  ]
+  const onOpenRoles = useCallback(() => setOpenRoles(true), [])
+  const onCloseRoles = useCallback(() => setOpenRoles(false), [])
 
   const addUser = async () => {
     const newUser = {
-      role: roles.find((r) => r.value === (selectedRole === '' ? 'sanity_read' : selectedRole))?.id,
+      role: rolesNewUser.join(','),
       profile: {
         given_name: firstName,
         family_name: lastName,
@@ -55,6 +58,7 @@ const UserManagerComponent = (props) => {
       {
         mode: 'no-cors',
         method: 'POST',
+        credentials: 'include',
         body: JSON.stringify(newUser),
       },
     )
@@ -67,37 +71,73 @@ const UserManagerComponent = (props) => {
     setEmail('')
     setFirstName('')
     setLastName('')
-    setSelectedRole('')
-
+    setRolesNewUser([])
+    fetch('https://sso-saml-example2.vercel.app/users?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f', {
+      method: 'GET',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setPersons(data)
+      })
     onClose()
   }
+  function setRolesForNewUser(event) {
+    const {value, checked} = event.target
+    if (checked) {
+      setRolesNewUser((prev) => [...prev, value])
+    } else {
+      setRolesNewUser((prev) => prev.filter((role) => role !== value))
+    }
+  }
 
-  function changeRole(id, newRole) {
-    const person = persons.find((p) => p.id === id)
+  function changeRoles(id) {
+    let person = persons.find((p) => p.id === id)
 
     fetch(
       'https://sso-saml-example2.vercel.app/changeRole?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f',
       {
         method: 'POST',
+        mode: 'no-cors',
         body: JSON.stringify({
           id: id,
-          newRole: newRole,
-          oldRole: person.role,
+          roles: person.properties.sanityroles,
         }),
       },
     ).then((response) => {
-      const updatedPersons = persons.map((person) =>
-        person.id === id ? {...person, role: newRole} : person,
-      )
-
       toast.push({
         status: 'success',
-        title: `Role for person ${decodeURIComponent(escape(person.displayName))} updated`,
+        title: `Role for person ${person.full_name} updated`,
       })
-      setPersons(updatedPersons)
+
+      onCloseRoles()
     })
   }
+  function setRolesForUser(event, id) {
+    let person = persons.find((p) => p.id === id)
+    let roles = person.properties.sanityroles.split(',')
+
+    if (event.target.checked) {
+      roles.push(event.target.value)
+    } else {
+      roles = roles.filter((role) => role !== event.target.value)
+    }
+    person.properties.sanityroles = roles.join(',')
+    const updatedPersons = persons.map((person) => (person.id === id ? {...person} : person))
+    setPersons(updatedPersons)
+  }
   useEffect(() => {
+    setRoles([])
+    client
+      .request({
+        uri: `/projects/${projectId}/roles`,
+
+        method: 'GET',
+        withCredentials: true,
+      })
+      .then((res) => {
+        setRoles(res)
+      })
+
     setPersons([])
     fetch('https://sso-saml-example2.vercel.app/users?code=09da511e-ffcf-4598-aeaa-4c26b0fcc64f', {
       method: 'GET',
@@ -145,15 +185,27 @@ const UserManagerComponent = (props) => {
                 <Card paddingBottom={2}>
                   <Heading size={0}>Role</Heading>
                 </Card>
-                <Select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                  {roles.map((role) => {
-                    return (
-                      <option value={role.value} key={role.value}>
-                        {role.name}
-                      </option>
-                    )
-                  })}
-                </Select>
+                {roles.map((role) => {
+                  return (
+                    <Card padding={2} key={role.name}>
+                      <Flex align="center">
+                        <Checkbox
+                          id="checkbox"
+                          style={{display: 'block'}}
+                          value={role.name}
+                          onClick={(e) => {
+                            setRolesForNewUser(e)
+                          }}
+                        />
+                        <Box flex={1} paddingLeft={3}>
+                          <Text>
+                            <label htmlFor="checkbox">{role.title}</label>
+                          </Text>
+                        </Box>
+                      </Flex>
+                    </Card>
+                  )
+                })}
               </Box>
               <Box padding={4}>
                 <Card paddingBottom={2}>
@@ -173,9 +225,7 @@ const UserManagerComponent = (props) => {
                 <Box flex={1}>
                   <Heading size={1}>Email</Heading>
                 </Box>
-                <Box flex={1}>
-                  <Heading size={1}>Login provider</Heading>
-                </Box>
+
                 <Box flex={1}>
                   <Heading size={1}>Roles</Heading>
                 </Box>
@@ -185,28 +235,54 @@ const UserManagerComponent = (props) => {
               <Container key={p.id}>
                 <Grid columns={[1, 4]} gap={1}>
                   <Box flex={1}>
-                    <Text>{decodeURIComponent(escape(p.displayName))}</Text>
+                    <Text>{p.full_name}</Text>
                   </Box>
                   <Box flex={1}>
                     <Text>{p.email}</Text>
                   </Box>
+
                   <Box flex={1}>
-                    <Text>{p.loginProvider}</Text>
+                    <Text>{p.properties.sanityroles}</Text>
+
+                    {openRoles && (
+                      <Dialog
+                        header="Change roles"
+                        id="dialog-example"
+                        onClose={onCloseRoles}
+                        zOffset={1000}
+                      >
+                        {roles.map((role) => {
+                          return (
+                            <Card padding={2} key={role.name}>
+                              <Flex align="center">
+                                <Checkbox
+                                  id="checkbox"
+                                  style={{display: 'block'}}
+                                  value={role.name}
+                                  checked={p.properties.sanityroles?.includes(role.name)}
+                                  onChange={(e) => {
+                                    setRolesForUser(e, p.id)
+                                  }}
+                                />
+                                <Box flex={1} paddingLeft={3}>
+                                  <Text>
+                                    <label htmlFor="checkbox">{role.title}</label>
+                                  </Text>
+                                </Box>
+                              </Flex>
+                            </Card>
+                          )
+                        })}
+                        <Box padding={4}>
+                          <Card paddingBottom={2}>
+                            <Button onClick={(e) => changeRoles(p.id)} text="Save" />
+                          </Card>
+                        </Box>
+                      </Dialog>
+                    )}
                   </Box>
                   <Box flex={1}>
-                    <Select
-                      value={p.role}
-                      onChange={(e) => changeRole(p.id, e.target.value)}
-                      key={`select${p.id}`}
-                    >
-                      {roles.map((role) => {
-                        return (
-                          <option value={role.value} key={role.value}>
-                            {role.name}
-                          </option>
-                        )
-                      })}
-                    </Select>
+                    <Button onClick={onOpenRoles} text="Change roles" />
                   </Box>
                 </Grid>
               </Container>
