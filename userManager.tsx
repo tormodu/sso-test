@@ -81,7 +81,7 @@ const UserManagerComponent = (props) => {
       })
     onClose()
   }
-  function setRolesForNewUser(event) {
+  function setRolesForNewUser(event: any) {
     const {value, checked} = event.target
     if (checked) {
       setRolesNewUser((prev) => [...prev, value])
@@ -90,7 +90,7 @@ const UserManagerComponent = (props) => {
     }
   }
 
-  function changeRoles(id) {
+  function changeRoles(id: any) {
     let person = persons.find((p) => p.id === id)
 
     fetch(
@@ -112,7 +112,7 @@ const UserManagerComponent = (props) => {
       onCloseRoles()
     })
   }
-  function setRolesForUser(event, id) {
+  function setRolesForUser(event: any, id: any) {
     let person = persons.find((p) => p.id === id)
     let roles = person.properties.sanityroles.split(',')
 
